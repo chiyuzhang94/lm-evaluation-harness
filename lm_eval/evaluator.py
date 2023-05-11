@@ -12,6 +12,8 @@ from lm_eval.utils import positional_deprecated, run_task_tests
 @positional_deprecated
 def simple_evaluate(
     model,
+    task_name,
+    model_name,
     model_args=None,
     tasks=[],
     num_fewshot=0,
@@ -86,6 +88,8 @@ def simple_evaluate(
     results = evaluate(
         lm=lm,
         task_dict=task_dict,
+        task_name=task_name,
+        model_name=model_name,
         num_fewshot=num_fewshot,
         limit=limit,
         bootstrap_iters=bootstrap_iters,
@@ -116,6 +120,8 @@ decontaminate_suffix = "_decontaminate"
 def evaluate(
     lm,
     task_dict,
+    task_name,
+    model_name,
     provide_description=None,
     num_fewshot=0,
     limit=None,
@@ -159,6 +165,12 @@ def evaluate(
         for name, task in task_dict.items()
         if (task.has_validation_docs() or task.has_test_docs())
     ]
+
+    task_dict_items[0][1].set_dataset_name(task_name)
+    task_dict_items[0][1].set_model_name(model_name)
+    task_dict_items[0][1].download()
+
+    print("***********, ", task_dict_items[0][1].DATASET_NAME)
 
     results = collections.defaultdict(dict)
     versions = collections.defaultdict(dict)
