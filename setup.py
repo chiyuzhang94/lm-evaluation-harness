@@ -19,7 +19,7 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     install_requires=[
         "datasets>=2.0.0",
         "jsonlines",
@@ -42,7 +42,7 @@ setuptools.setup(
     ],
     extras_require={
         "dev": ["black", "flake8", "pre-commit", "pytest", "pytest-cov"],
-        "multilingual": ["nagisa>=0.2.7", "jieba>=0.42.1"],
+        "multilingual": ["jieba>=0.42.1"],
         "sentencepiece": ["sentencepiece>=0.1.98", "protobuf>=4.22.1"],
     },
 )
