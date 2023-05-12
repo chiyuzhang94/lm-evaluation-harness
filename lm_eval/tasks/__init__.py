@@ -53,7 +53,7 @@ from . import storycloze
 from . import toxigen
 from . import crowspairs
 from . import xcopa
-from . import bigbench
+# from . import bigbench
 from . import xstorycloze
 from . import xwinograd
 from . import pawsx
@@ -318,7 +318,7 @@ TASK_REGISTRY = {
     # "storycloze_2018": storycloze.StoryCloze2018,
     # "sat": sat.SATAnalogies,
     **xcopa.construct_tasks(),
-    **bigbench.create_all_tasks(),
+#     **bigbench.create_all_tasks(),
     **xstorycloze.create_all_tasks(),
     **xwinograd.create_all_tasks(),
     **pawsx.construct_tasks(),
