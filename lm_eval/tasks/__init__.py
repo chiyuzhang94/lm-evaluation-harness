@@ -52,8 +52,14 @@ from . import gsm8k
 from . import storycloze
 from . import toxigen
 from . import crowspairs
-from . import bigbench
-from . import emotion_task
+from . import xcopa
+# from . import bigbench
+from . import xstorycloze
+from . import xwinograd
+from . import pawsx
+from . import xnli
+from . import mgsm
+from . import emotion_task, irony_sarcasm, subjective_task
 ########################################
 # Translation tasks
 ########################################
@@ -308,11 +314,19 @@ TASK_REGISTRY = {
     "crows_pairs_french_physical_appearance": crowspairs.CrowsPairsFrenchPhysicalAppearance,
     "crows_pairs_french_autre": crowspairs.CrowsPairsFrenchAutre,
     "emotion_task": emotion_task.EmotionTask,
+    "irony_sarcasm_task": irony_sarcasm.IronySarcasm,
+    "subjective_task": subjective_task.Subjective,
     # Requires manual download of data.
     # "storycloze_2016": storycloze.StoryCloze2016,
     # "storycloze_2018": storycloze.StoryCloze2018,
     # "sat": sat.SATAnalogies,
-    **bigbench.create_all_tasks(),
+    **xcopa.construct_tasks(),
+#     **bigbench.create_all_tasks(),
+    **xstorycloze.create_all_tasks(),
+    **xwinograd.create_all_tasks(),
+    **pawsx.construct_tasks(),
+    **xnli.construct_tasks(),
+    **mgsm.construct_tasks(),
 }
 
 
