@@ -21,7 +21,7 @@ _CITATION = """
 
 
 # TODO: Replace `NewTask` with the name of your Task.
-class IronySarcasm(Task):
+class Subjective(Task):
     VERSION = 0
     # TODO: Add the `DATASET_PATH` string. This will be the name of the `Task`
     # dataset as denoted in HuggingFace `datasets`.
@@ -121,8 +121,13 @@ class IronySarcasm(Task):
         label_prompt += f", or {keys[-1]}"
         label_prompt = label_prompt.lower()
         label_prompt = label_prompt.replace('_', ' ')
+        
+        if len(keys) <= 2:
+            text = doc["content"] + f"\nQuestion: Is this sentence {label_prompt}?\nAnswer:"
+        else:
+            text = doc["content"] + f"\nQuestion: Does this sentence express {label_prompt}?\nAnswer:"
 
-        return doc["content"]+f"\nQuestion: Is this sentence {label_prompt}?\nAnswer:"
+        return text
     
     
     
