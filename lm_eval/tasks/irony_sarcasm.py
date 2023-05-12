@@ -114,13 +114,16 @@ class IronySarcasm(Task):
         if "Others" in keys:
             keys.remove("Others")
             keys.append("Others")
+        if "Not" in keys:
+            keys.remove("Not")
+            keys.append("Not")
+            
         label_prompt = ", ".join(keys[:-1])
         label_prompt += f", or {keys[-1]}"
         label_prompt = label_prompt.lower()
+        label_prompt = label_prompt.replace('_', ' ')
 
-
-
-        return doc["content"]+f"\nQuestion: Is the emotion of this sentence {label_prompt}?\nAnswer:"
+        return doc["content"]+f"\nQuestion: Is this sentence {label_prompt}?\nAnswer:"
     
     
     
@@ -131,7 +134,7 @@ class IronySarcasm(Task):
         # TODO: Fill in the `target` ("gold answer") variable.
         # The prepended `" "` is required to space out the `doc_to_text` and
         # `doc_to_target` strings.
-        target = doc["label"]
+        target = doc["label"].replace('_', ' ')
         return " " + target
 
     def construct_requests(self, doc, ctx):
