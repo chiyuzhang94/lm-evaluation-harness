@@ -21,7 +21,7 @@ _CITATION = """
 
 
 # TODO: Replace `NewTask` with the name of your Task.
-class EmotionTask(Task):
+class SentimentTask(Task):
     VERSION = 0
     # TODO: Add the `DATASET_PATH` string. This will be the name of the `Task`
     # dataset as denoted in HuggingFace `datasets`.
@@ -111,16 +111,25 @@ class EmotionTask(Task):
 
         label_prompt=""
         keys=list(self.label2ind.keys())
-        if "Others" in keys:
-            keys.remove("Others")
-            keys.append("Others")
+        if "Very_Positive" in keys:
+            keys.remove("Negative")
+            keys.remove("Neutral")
+            keys.remove("Positive")
+            keys.remove("Very_Negative")
+            keys.append("Positive")
+            keys.append("Neutral")
+            keys.append("Negative")
+            keys.append("Very_Negative")
+            
         label_prompt = ", ".join(keys[:-1])
         label_prompt += f", or {keys[-1]}"
         label_prompt = label_prompt.lower()
+        full_text = doc["content"]+f"\nQuestion: Is the sentiment of this sentence {label_prompt}?\nAnswer:"
+        if "Star1" in keys:
+            full_text = doc["content"]+f"\nQuestion: Is this text rated as {label_prompt}? Higher is better.\nAnswer:"
+            
 
-
-
-        return doc["content"]+f"\nQuestion: Is the emotion of this sentence {label_prompt}?\nAnswer:"
+        return full_text
     
     
     

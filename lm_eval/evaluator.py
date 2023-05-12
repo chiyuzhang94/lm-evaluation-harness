@@ -21,7 +21,7 @@ def simple_evaluate(
     device=None,
     no_cache=False,
     limit=None,
-    bootstrap_iters=100000,
+    bootstrap_iters=500,
     description_dict=None,
     check_integrity=False,
     decontamination_ngrams_path=None,
@@ -125,7 +125,7 @@ def evaluate(
     provide_description=None,
     num_fewshot=0,
     limit=None,
-    bootstrap_iters=100000,
+    bootstrap_iters=500,
     description_dict=None,
     decontamination_ngrams_path=None,
 ):
