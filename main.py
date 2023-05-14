@@ -30,6 +30,8 @@ def parse_args():
     parser.add_argument("--model", required=True)
     parser.add_argument("--model_args", default="")
     parser.add_argument("--tasks", default=None, choices=MultiChoice(tasks.ALL_TASKS))
+    parser.add_argument("--task_name", default=None)
+    parser.add_argument("--model_name", default=None)
     parser.add_argument("--provide_description", action="store_true")
     parser.add_argument("--num_fewshot", type=int, default=0)
     parser.add_argument("--batch_size", type=str, default=None)
@@ -40,6 +42,7 @@ def parse_args():
     parser.add_argument("--decontamination_ngrams_path", default=None)
     parser.add_argument("--description_dict_path", default=None)
     parser.add_argument("--check_integrity", action="store_true")
+    
 
     return parser.parse_args()
 
@@ -77,6 +80,8 @@ def main():
             description_dict = json.load(f)
 
     results = evaluator.simple_evaluate(
+        model_name=args.model_name,
+        task_name=args.task_name,
         model=args.model,
         model_args=args.model_args,
         tasks=task_names,
