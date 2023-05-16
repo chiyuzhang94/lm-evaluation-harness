@@ -130,7 +130,7 @@ class Other(Task):
         else:
             text = doc["content"]+f"\nQuestion: Is this sentence {label_prompt}?\nAnswer:"
 
-        return doc["content"]+f"\nQuestion: Is this sentence {label_prompt}?\nAnswer:"
+        return text
     
     
     
