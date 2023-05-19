@@ -59,7 +59,7 @@ from . import xwinograd
 from . import pawsx
 from . import xnli
 from . import mgsm
-from . import emotion_task, irony_sarcasm, subjective_task, humor_task, other_task
+from . import emotion_task, irony_sarcasm, subjective_task, humor_task, other_task,sentiment_task
 ########################################
 # Translation tasks
 ########################################
@@ -314,6 +314,7 @@ TASK_REGISTRY = {
     "crows_pairs_french_physical_appearance": crowspairs.CrowsPairsFrenchPhysicalAppearance,
     "crows_pairs_french_autre": crowspairs.CrowsPairsFrenchAutre,
     "emotion_task": emotion_task.EmotionTask,
+    "sentiment_task": sentiment_task.SentimentTask,
     "irony_sarcasm_task": irony_sarcasm.IronySarcasm,
     "subjective_task": subjective_task.Subjective,
     "humor_task": humor_task.Humor,
