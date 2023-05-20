@@ -25,7 +25,7 @@ class Subjective(Task):
     VERSION = 0
     # TODO: Add the `DATASET_PATH` string. This will be the name of the `Task`
     # dataset as denoted in HuggingFace `datasets`.
-    DATASET_PATH = "/home/duy.doan/Documents/chiyu/multilingual_sm/sparrow_dataset"
+    DATASET_PATH = "/home/khaidoan/scratch/multilingual_sm/sparrow_dataset"
     # TODO: Add the `DATASET_NAME` string. This is the name of a subset within
     # `DATASET_PATH`. If there aren't specific subsets you need, leave this as `None`.
     DATASET_NAME = None
@@ -123,9 +123,20 @@ class Subjective(Task):
         label_prompt = label_prompt.replace('_', ' ')
         
         if len(keys) <= 2:
-            text = doc["content"] + f"\nQuestion: Is this sentence {label_prompt}?\nAnswer:"
+            text = doc["content"] + f"\nQuestion: Is this sentence {label_prompt}?"
         else:
-            text = doc["content"] + f"\nQuestion: Does this sentence express {label_prompt}?\nAnswer:"
+            text = doc["content"] + f"\nQuestion: Does this sentence express {label_prompt}?"
+            
+        prompt_wrap = (
+            "Below is an instruction that describes a task. "
+            "Write a response that appropriately completes the request.\n\n"
+            "### Instruction:\n{}\n\n### Response:"
+        )
+        
+        if text:
+            text = prompt_wrap.format(text)
+            
+        assert text is not None
 
         return text
     

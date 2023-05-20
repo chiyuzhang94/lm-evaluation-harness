@@ -25,7 +25,7 @@ class Other(Task):
     VERSION = 0
     # TODO: Add the `DATASET_PATH` string. This will be the name of the `Task`
     # dataset as denoted in HuggingFace `datasets`.
-    DATASET_PATH = "/home/duy.doan/Documents/chiyu/multilingual_sm/sparrow_dataset"
+    DATASET_PATH = "/home/khaidoan/scratch/multilingual_sm/sparrow_dataset"
     # TODO: Add the `DATASET_NAME` string. This is the name of a subset within
     # `DATASET_PATH`. If there aren't specific subsets you need, leave this as `None`.
     DATASET_NAME = None
@@ -126,11 +126,34 @@ class Other(Task):
         
         text = None
         if self.DATASET_NAME in ["offense-target-2022-chakravarthi-mal", "offense-target-2022-chakravarthi-tam"]:
-            text = doc["content"]+f"\nQuestion: Is this sentence hate speech or not? If yes, does this sentence target individual, group, or not?\nAnswer:"
+            text = doc["content"]+"\nQuestion: Is this sentence hate speech or not? If yes, does this sentence target individual, group, or not?"
+        elif self.DATASET_NAME in ["offensive-group-2019-zampieri-eng", "offense-target-2022-chakravarthi-kan", "hate-target-2022-jeong-kor"]:
+            text = doc["content"]+f"\nQuestion: Does this offensive text target {label_prompt}?"
+        elif self.DATASET_NAME in ["hate-group-2019-ousidhoum-ara", "hate-group-2019-ousidhoum-fre"]:
+            text = doc["content"]+f"\nQuestions: Does this hate speech target {label_prompt}?"
+        elif self.DATASET_NAME in ["dangerous-2020-alshehri-ara"]:
+            text = doc["content"]+"\nQuestion: Is the language of this sentence harmful or not?"
+        elif self.DATASET_NAME in ["hate-target-2019-ousidhoum-ara", "hate-target-2019-ousidhoum-fre"]:
+            text = doc["content"]+f"\nQuestion: Does this hate speech text insult against people based on their attribute of {label_prompt}?"
+        elif self.DATASET_NAME in ["hate-target-2020-karim-ben"]:
+            text = doc["content"]+"\nQuestion: Does this text express geopolitical, personal, political, or religious hate?"
+        elif self.DATASET_NAME in ["offensive-target-2019-zampieri-eng"]:
+            text = doc["content"]+f"\nQuestion: Is this offensive text {label_prompt} insult?"
         else:
-            text = doc["content"]+f"\nQuestion: Is this sentence {label_prompt}?\nAnswer:"
+            text = doc["content"]+f"\nQuestion: Is the language of this text {label_prompt}?"
+            
+        prompt_wrap = (
+            "Below is an instruction that describes a task. "
+            "Write a response that appropriately completes the request.\n\n"
+            "### Instruction:\n{}\n\n### Response:"
+        )
+        
+        if text:
+            text = prompt_wrap.format(text)
+            
+        assert text is not None
 
-        return doc["content"]+f"\nQuestion: Is this sentence {label_prompt}?\nAnswer:"
+        return text
     
     
     
@@ -150,6 +173,7 @@ class Other(Task):
         elif self.DATASET_NAME == "dangerous-2020-alshehri-ara":
             target = doc["label"].replace("Dangerous", "Harmful")
         target = doc["label"].replace('_', ' ')
+        target = doc["label"].replace('Hate', 'Hateful')
         return " " + target
 
     def construct_requests(self, doc, ctx):
