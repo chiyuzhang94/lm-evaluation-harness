@@ -25,7 +25,7 @@ class SentimentTask(Task):
     VERSION = 0
     # TODO: Add the `DATASET_PATH` string. This will be the name of the `Task`
     # dataset as denoted in HuggingFace `datasets`.
-    DATASET_PATH = "/home/qisheng.liao/multilingual_sm/sparrow_dataset"
+    DATASET_PATH = "/home/aguailhj/scratch/multilingual_sm/sparrow_dataset"
     # TODO: Add the `DATASET_NAME` string. This is the name of a subset within
     # `DATASET_PATH`. If there aren't specific subsets you need, leave this as `None`.
     DATASET_NAME = None
@@ -127,7 +127,19 @@ class SentimentTask(Task):
         full_text = doc["content"]+f"\nQuestion: Is the sentiment of this sentence {label_prompt}?\nAnswer:"
         if "Star1" in keys:
             full_text = doc["content"]+f"\nQuestion: Is this text rated as {label_prompt}? Higher is better.\nAnswer:"
+
+        prompt_wrap = (
+            "Below is an instruction that describes a task. "
+            "Write a response that appropriately completes the request.\n\n"
+            "### Instruction:\n{}\n\n### Response:"
+        )
+        
+        if full_text:
+            full_text = prompt_wrap.format(full_text)
             
+        assert full_text is not None
+
+
 
         return full_text
     

@@ -25,7 +25,7 @@ class EmotionTask(Task):
     VERSION = 0
     # TODO: Add the `DATASET_PATH` string. This will be the name of the `Task`
     # dataset as denoted in HuggingFace `datasets`.
-    DATASET_PATH = "/home/qisheng.liao/multilingual_sm/sparrow_dataset"
+    DATASET_PATH = "/home/aguailhj/scratch/multilingual_sm/sparrow_dataset"
     # TODO: Add the `DATASET_NAME` string. This is the name of a subset within
     # `DATASET_PATH`. If there aren't specific subsets you need, leave this as `None`.
     DATASET_NAME = None
@@ -118,9 +118,19 @@ class EmotionTask(Task):
         label_prompt += f", or {keys[-1]}"
         label_prompt = label_prompt.lower()
 
+        prompt_wrap = (
+            "Below is an instruction that describes a task. "
+            "Write a response that appropriately completes the request.\n\n"
+            "### Instruction:\n{}\n\n### Response:"
+        )
+        text=doc["content"]+f"\nQuestion: Is the emotion of this sentence {label_prompt}?\nAnswer:"
 
+        if text:
+            text = prompt_wrap.format(text)
+            
+        assert text is not None
 
-        return doc["content"]+f"\nQuestion: Is the emotion of this sentence {label_prompt}?\nAnswer:"
+        return text
     
     
     

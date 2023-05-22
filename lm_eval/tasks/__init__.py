@@ -59,7 +59,7 @@ from . import xwinograd
 from . import pawsx
 from . import xnli
 from . import mgsm
-from . import emotion_task, irony_sarcasm, subjective_task, humor_task, other_task
+from . import emotion_task, irony_sarcasm, subjective_task, humor_task, other_task,sentiment_task
 ########################################
 # Translation tasks
 ########################################
@@ -318,6 +318,7 @@ TASK_REGISTRY = {
     "subjective_task": subjective_task.Subjective,
     "humor_task": humor_task.Humor,
     "other_task": other_task.Other,
+    "sentiment_task":sentiment_task.SentimentTask,
     # Requires manual download of data.
     # "storycloze_2016": storycloze.StoryCloze2016,
     # "storycloze_2018": storycloze.StoryCloze2018,
