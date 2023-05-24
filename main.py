@@ -28,10 +28,11 @@ class MultiChoice:
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True)
-    parser.add_argument("--model_args", default="")
-    parser.add_argument("--tasks", default=None, choices=MultiChoice(tasks.ALL_TASKS))
-    parser.add_argument("--task_name", default=None)
-    parser.add_argument("--model_name", default=None)
+    parser.add_argument("--model_args", required=True, default="")
+    parser.add_argument("--tasks", required=True, default=None, choices=MultiChoice(tasks.ALL_TASKS))
+    parser.add_argument("--task_name", required=True, default=None)
+    parser.add_argument("--model_name", required=True, default=None)
+    parser.add_argument("--data_path", required=True)
     parser.add_argument("--provide_description", action="store_true")
     parser.add_argument("--num_fewshot", type=int, default=0)
     parser.add_argument("--batch_size", type=str, default=None)
@@ -80,6 +81,7 @@ def main():
             description_dict = json.load(f)
 
     results = evaluator.simple_evaluate(
+        data_path=args.data_path,
         model_name=args.model_name,
         task_name=args.task_name,
         model=args.model,

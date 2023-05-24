@@ -40,8 +40,9 @@ class SentimentTask(Task):
         # self.DATASET_NAME = task_name
         # self.dataset = self.download()
 
-    def set_dataset_name(self, task_name):
+    def set_dataset_info(self, data_path, task_name):
         self.DATASET_NAME = task_name
+        self.DATASET_PATH = data_path
         with open(f"{self.DATASET_PATH}/data/{task_name}/label2ind.json") as json_file:
             self.label2ind = json.load(json_file)
 

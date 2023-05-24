@@ -14,6 +14,7 @@ def simple_evaluate(
     model,
     task_name,
     model_name,
+    data_path,
     model_args=None,
     tasks=[],
     num_fewshot=0,
@@ -90,6 +91,7 @@ def simple_evaluate(
         task_dict=task_dict,
         task_name=task_name,
         model_name=model_name,
+        data_path=data_path,
         num_fewshot=num_fewshot,
         limit=limit,
         bootstrap_iters=bootstrap_iters,
@@ -122,6 +124,7 @@ def evaluate(
     task_dict,
     task_name,
     model_name,
+    data_path,
     provide_description=None,
     num_fewshot=0,
     limit=None,
@@ -166,7 +169,7 @@ def evaluate(
         if (task.has_validation_docs() or task.has_test_docs())
     ]
 
-    task_dict_items[0][1].set_dataset_name(task_name)
+    task_dict_items[0][1].set_dataset_info(data_path, task_name)
     task_dict_items[0][1].set_model_name(model_name)
     task_dict_items[0][1].download()
 
