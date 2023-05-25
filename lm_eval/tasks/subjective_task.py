@@ -39,8 +39,9 @@ class Subjective(Task):
         # self.DATASET_NAME = task_name
         # self.dataset = self.download()
 
-    def set_dataset_name(self, task_name):
+    def set_dataset_info(self, data_path, task_name):
         self.DATASET_NAME = task_name
+        self.DATASET_PATH = data_path
         with open(f"{self.DATASET_PATH}/data/{task_name}/label2ind.json") as json_file:
             self.label2ind = json.load(json_file)
 
@@ -123,18 +124,12 @@ class Subjective(Task):
         label_prompt = label_prompt.replace('_', ' ')
         
         if len(keys) <= 2:
-            text = doc["content"] + f"\nQuestion: Is this sentence {label_prompt}?"
+            text = doc["content"] + f"\nQuestion: Is this sentence {label_prompt}?\nAnswer:"
         else:
-            text = doc["content"] + f"\nQuestion: Does this sentence express {label_prompt}?"
+            text = doc["content"] + f"\nQuestion: Does this sentence express {label_prompt}?\nAnswer:"
             
-        prompt_wrap = (
-            "Below is an instruction that describes a task. "
-            "Write a response that appropriately completes the request.\n\n"
-            "### Instruction:\n{}\n\n### Response:"
-        )
-        
-        if text:
-            text = prompt_wrap.format(text)
+        if self.prompt_wrapper:
+            text = self.prompt_wrapper.format(text)
             
         assert text is not None
 

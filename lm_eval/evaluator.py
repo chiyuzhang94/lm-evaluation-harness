@@ -12,8 +12,10 @@ from lm_eval.utils import positional_deprecated, run_task_tests
 @positional_deprecated
 def simple_evaluate(
     model,
-    task_name,
+    task_list,
     model_name,
+    data_path,
+    prompt_wrapper,
     model_args=None,
     tasks=[],
     num_fewshot=0,
@@ -85,11 +87,13 @@ def simple_evaluate(
     if check_integrity:
         run_task_tests(task_list=tasks)
 
-    results = evaluate(
+    list_of_results = evaluate(
         lm=lm,
+        prompt_wrapper=prompt_wrapper,
         task_dict=task_dict,
-        task_name=task_name,
+        task_list=task_list,
         model_name=model_name,
+        data_path=data_path,
         num_fewshot=num_fewshot,
         limit=limit,
         bootstrap_iters=bootstrap_iters,
@@ -98,19 +102,22 @@ def simple_evaluate(
     )
 
     # add info about the model and few shot config
-    results["config"] = {
-        "model": model,
-        "model_args": model_args,
-        "num_fewshot": num_fewshot,
-        "batch_size": batch_size,
-        "device": device,
-        "no_cache": no_cache,
-        "limit": limit,
-        "bootstrap_iters": bootstrap_iters,
-        "description_dict": description_dict,
-    }
+    ret_results = []
+    for results in list_of_results:
+        results["config"] = {
+            "model": model,
+            "model_args": model_args,
+            "num_fewshot": num_fewshot,
+            "batch_size": batch_size,
+            "device": device,
+            "no_cache": no_cache,
+            "limit": limit,
+            "bootstrap_iters": bootstrap_iters,
+            "description_dict": description_dict,
+        }
 
-    return results
+        ret_results.append(results)
+    return ret_results
 
 
 decontaminate_suffix = "_decontaminate"
@@ -120,8 +127,10 @@ decontaminate_suffix = "_decontaminate"
 def evaluate(
     lm,
     task_dict,
-    task_name,
+    task_list,
     model_name,
+    data_path,
+    prompt_wrapper,
     provide_description=None,
     num_fewshot=0,
     limit=None,
@@ -166,147 +175,149 @@ def evaluate(
         if (task.has_validation_docs() or task.has_test_docs())
     ]
 
-    task_dict_items[0][1].set_dataset_name(task_name)
-    task_dict_items[0][1].set_model_name(model_name)
-    task_dict_items[0][1].download()
+    for task_name in task_list:
+        task_dict_items[0][1].set_dataset_info(data_path, task_name)
+        task_dict_items[0][1].set_model_name(model_name)
+        task_dict_items[0][1].set_prompt_wrapper(prompt_wrapper)
+        task_dict_items[0][1].download()
 
-    print("***********, ", task_dict_items[0][1].DATASET_NAME)
+        print("***********, ", task_dict_items[0][1].DATASET_NAME)
 
-    results = collections.defaultdict(dict)
-    versions = collections.defaultdict(dict)
+        results = collections.defaultdict(dict)
+        versions = collections.defaultdict(dict)
 
-    requests = collections.defaultdict(list)
-    requests_origin = collections.defaultdict(list)
+        requests = collections.defaultdict(list)
+        requests_origin = collections.defaultdict(list)
 
-    overlaps = collections.defaultdict(list)  # {task_name: contaminated_docs}
+        overlaps = collections.defaultdict(list)  # {task_name: contaminated_docs}
 
-    # If we ever run into issues where the eval tasks don't fit in memory and we can't afford a machine with bigger
-    # memory, we can always modify this plumbing to support that, but I didn't want to include it just yet because
-    # over-engineering is bad (or we could make it write the requests to disk and then read them back out again
-    #  - probably using an sqlite db because of all the moving parts we have
+        # If we ever run into issues where the eval tasks don't fit in memory and we can't afford a machine with bigger
+        # memory, we can always modify this plumbing to support that, but I didn't want to include it just yet because
+        # over-engineering is bad (or we could make it write the requests to disk and then read them back out again
+        #  - probably using an sqlite db because of all the moving parts we have
 
-    # TODO: we need unit tests & sanity checks or something to ensure that the return of `validation_docs` is stable
-    docs = {}
+        # TODO: we need unit tests & sanity checks or something to ensure that the return of `validation_docs` is stable
+        docs = {}
 
-    docs_for_decontamination = collections.defaultdict(list)
+        docs_for_decontamination = collections.defaultdict(list)
 
-    # get lists of each type of request
-    for task_name, task in task_dict_items:
-        versions[task_name] = task.VERSION
-        # default to test doc, fall back to val doc if validation unavailable
-        # TODO: the test-fallback-to-val system isn't final, we should revisit it at some point
-        if task.has_test_docs():
-            task_doc_func = task.test_docs
-            task_set = "test"  # Required for caching in the decontamination
-        elif task.has_validation_docs():
-            task_set = "val"  # Required for caching in the decontamination
-            task_doc_func = task.validation_docs
-        else:
-            raise RuntimeError("Task has neither test_docs nor validation_docs")
+        # get lists of each type of request
+        for task_name, task in task_dict_items:
+            versions[task_name] = task.VERSION
+            # default to test doc, fall back to val doc if validation unavailable
+            # TODO: the test-fallback-to-val system isn't final, we should revisit it at some point
+            if task.has_test_docs():
+                task_doc_func = task.test_docs
+                task_set = "test"  # Required for caching in the decontamination
+            elif task.has_validation_docs():
+                task_set = "val"  # Required for caching in the decontamination
+                task_doc_func = task.validation_docs
+            else:
+                raise RuntimeError("Task has neither test_docs nor validation_docs")
 
-        # deterministically shuffle docs and chop off the first `limit` because sometimes docs are in some kind of order
-        task_docs = list(task_doc_func())
-        rnd = random.Random()
-        rnd.seed(42)
-        rnd.shuffle(task_docs)
+            # deterministically shuffle docs and chop off the first `limit` because sometimes docs are in some kind of order
+            task_docs = list(task_doc_func())
+            rnd = random.Random()
+            rnd.seed(42)
+            rnd.shuffle(task_docs)
 
-        description = (
-            description_dict[task_name]
-            if description_dict and task_name in description_dict
-            else ""
-        )
-
-        for doc_id, doc in enumerate(itertools.islice(task_docs, 0, limit)):
-
-            if decontaminate and task.should_decontaminate():
-                docs_for_decontamination[(task_name, task_set)].append(
-                    task.doc_to_decontamination_query(doc)
-                )
-
-            docs[(task_name, doc_id)] = doc
-            ctx = task.fewshot_context(
-                doc=doc, num_fewshot=num_fewshot, rnd=rnd, description=description
+            description = (
+                description_dict[task_name]
+                if description_dict and task_name in description_dict
+                else ""
             )
-            reqs = task.construct_requests(doc, ctx)
-            if not isinstance(reqs, (list, tuple)):
-                reqs = [reqs]
-            for i, req in enumerate(reqs):
-                requests[req.request_type].append(req)
-                # i: index in requests for a single task instance
-                # doc_id: unique id that we can get back to a doc using `docs`
-                requests_origin[req.request_type].append((i, task_name, doc, doc_id))
 
-    # Compare all tasks/sets at once to ensure a single training set scan
-    if decontaminate:
-        from lm_eval.decontamination.decontaminate import get_train_overlap
+            for doc_id, doc in enumerate(itertools.islice(task_docs, 0, limit)):
 
-        print("Finding train/test overlap, please wait...")
-        overlaps = get_train_overlap(
-            docs_for_decontamination, decontamination_ngrams_path, limit
-        )
+                if decontaminate and task.should_decontaminate():
+                    docs_for_decontamination[(task_name, task_set)].append(
+                        task.doc_to_decontamination_query(doc)
+                    )
 
-    # all responses for each (task, doc)
-    process_res_queue = collections.defaultdict(list)
+                docs[(task_name, doc_id)] = doc
+                ctx = task.fewshot_context(
+                    doc=doc, num_fewshot=num_fewshot, rnd=rnd, description=description
+                )
+                reqs = task.construct_requests(doc, ctx)
+                if not isinstance(reqs, (list, tuple)):
+                    reqs = [reqs]
+                for i, req in enumerate(reqs):
+                    requests[req.request_type].append(req)
+                    # i: index in requests for a single task instance
+                    # doc_id: unique id that we can get back to a doc using `docs`
+                    requests_origin[req.request_type].append((i, task_name, doc, doc_id))
 
-    # execute each type of request
-    for reqtype, reqs in requests.items():
-        # TODO: right now, this code runs multiple separate LM requests for multiple Requests differing
-        #       only in index. We could implement some kind of caching, but that would be more of a band-aid
-        #       solution. we could also implement some kind of auto-grouping here;
-        #       they should end up next to each other.
+        # Compare all tasks/sets at once to ensure a single training set scan
+        if decontaminate:
+            from lm_eval.decontamination.decontaminate import get_train_overlap
 
-        print("Running", reqtype, "requests")
-        resps = getattr(lm, reqtype)([req.args for req in reqs])
-        resps = [
-            x if req.index is None else x[req.index] for x, req in zip(resps, reqs)
-        ]
+            print("Finding train/test overlap, please wait...")
+            overlaps = get_train_overlap(
+                docs_for_decontamination, decontamination_ngrams_path, limit
+            )
 
-        for resp, (i, task_name, doc, doc_id) in zip(resps, requests_origin[reqtype]):
-            process_res_queue[(task_name, doc_id)].append((i, resp))
+        # all responses for each (task, doc)
+        process_res_queue = collections.defaultdict(list)
 
-    vals = collections.defaultdict(list)
+        # execute each type of request
+        for reqtype, reqs in requests.items():
+            # TODO: right now, this code runs multiple separate LM requests for multiple Requests differing
+            #       only in index. We could implement some kind of caching, but that would be more of a band-aid
+            #       solution. we could also implement some kind of auto-grouping here;
+            #       they should end up next to each other.
 
-    # unpack results and sort back in order and return control to Task
-    for (task_name, doc_id), requests in process_res_queue.items():
-        requests.sort(key=lambda x: x[0])
-        requests = [x[1] for x in requests]
+            print("Running", reqtype, "requests")
+            resps = getattr(lm, reqtype)([req.args for req in reqs])
+            resps = [
+                x if req.index is None else x[req.index] for x, req in zip(resps, reqs)
+            ]
 
-        task = task_dict[task_name]
-        doc = docs[(task_name, doc_id)]
+            for resp, (i, task_name, doc, doc_id) in zip(resps, requests_origin[reqtype]):
+                process_res_queue[(task_name, doc_id)].append((i, resp))
 
-        metrics = task.process_results(doc, requests)
-        for metric, value in metrics.items():
-            vals[(task_name, metric)].append(value)
+        vals = collections.defaultdict(list)
 
-            # Re-use the evaluation for the decontaminated set by just ignoring the overlaps
-            if decontaminate and task_name in overlaps:
-                if doc_id not in overlaps[task_name]:
-                    vals[(task_name, metric + decontaminate_suffix)].append(value)
+        # unpack results and sort back in order and return control to Task
+        for (task_name, doc_id), requests in process_res_queue.items():
+            requests.sort(key=lambda x: x[0])
+            requests = [x[1] for x in requests]
 
-    # aggregate results
-    for (task_name, metric), items in vals.items():
-        task = task_dict[task_name]
-        real_metric = metric  # key when looking up the metric with task.aggregation
-        if metric.endswith(decontaminate_suffix):
-            real_metric = metric.replace(
-                decontaminate_suffix, ""
-            )  # decontaminated still uses the same metric
-        results[task_name][metric] = task.aggregation()[real_metric](items)
+            task = task_dict[task_name]
+            doc = docs[(task_name, doc_id)]
 
-        # hotfix: bleu, chrf, ter seem to be really expensive to bootstrap
-        # so we run them less iterations. still looking for a cleaner way to do this
+            metrics = task.process_results(doc, requests)
+            for metric, value in metrics.items():
+                vals[(task_name, metric)].append(value)
 
-        stderr = lm_eval.metrics.stderr_for_metric(
-            metric=task.aggregation()[real_metric],
-            bootstrap_iters=min(bootstrap_iters, 1000)
-            if metric in ["bleu", "chrf", "ter"]
-            else bootstrap_iters,
-        )
+                # Re-use the evaluation for the decontaminated set by just ignoring the overlaps
+                if decontaminate and task_name in overlaps:
+                    if doc_id not in overlaps[task_name]:
+                        vals[(task_name, metric + decontaminate_suffix)].append(value)
 
-        if stderr is not None:
-            results[task_name][metric + "_stderr"] = stderr(items)
+        # aggregate results
+        for (task_name, metric), items in vals.items():
+            task = task_dict[task_name]
+            real_metric = metric  # key when looking up the metric with task.aggregation
+            if metric.endswith(decontaminate_suffix):
+                real_metric = metric.replace(
+                    decontaminate_suffix, ""
+                )  # decontaminated still uses the same metric
+            results[task_name][metric] = task.aggregation()[real_metric](items)
 
-    return {"results": dict(results), "versions": dict(versions)}
+            # hotfix: bleu, chrf, ter seem to be really expensive to bootstrap
+            # so we run them less iterations. still looking for a cleaner way to do this
+
+            stderr = lm_eval.metrics.stderr_for_metric(
+                metric=task.aggregation()[real_metric],
+                bootstrap_iters=min(bootstrap_iters, 1000)
+                if metric in ["bleu", "chrf", "ter"]
+                else bootstrap_iters,
+            )
+
+            if stderr is not None:
+                results[task_name][metric + "_stderr"] = stderr(items)
+
+        yield {"results": dict(results), "versions": dict(versions)}
 
 
 def make_table(result_dict):

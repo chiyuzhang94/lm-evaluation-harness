@@ -40,8 +40,9 @@ class EmotionTask(Task):
         # self.DATASET_NAME = task_name
         # self.dataset = self.download()
 
-    def set_dataset_name(self, task_name):
+    def set_dataset_info(self, data_path, task_name):
         self.DATASET_NAME = task_name
+        self.DATASET_PATH = data_path
         with open(f"{self.DATASET_PATH}/data/{task_name}/label2ind.json") as json_file:
             self.label2ind = json.load(json_file)
 
@@ -118,15 +119,10 @@ class EmotionTask(Task):
         label_prompt += f", or {keys[-1]}"
         label_prompt = label_prompt.lower()
 
-        prompt_wrap = (
-            "Below is an instruction that describes a task. "
-            "Write a response that appropriately completes the request.\n\n"
-            "### Instruction:\n{}\n\n### Response:"
-        )
         text=doc["content"]+f"\nQuestion: Is the emotion of this sentence {label_prompt}?\nAnswer:"
 
-        if text:
-            text = prompt_wrap.format(text)
+        if self.prompt_wrapper:
+            text = self.prompt_wrapper.format(text)
             
         assert text is not None
 

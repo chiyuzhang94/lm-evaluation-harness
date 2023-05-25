@@ -1,2 +1,0 @@
-python main.py --model hf-causal-experimental --model_args pretrained=bigscience/bloomz-7b1-p3 --device=cuda:0 --model_name bloomz-7b1-p3 --tasks other_task --task_name offensive-2020-zampieri-ara
-python main.py --model hf-causal-experimental --model_args pretrained=bigscience/bloomz-7b1 --device=cuda:0 --model_name bloomz-7b1 --tasks other_task --task_name offensive-2020-zampieri-ara

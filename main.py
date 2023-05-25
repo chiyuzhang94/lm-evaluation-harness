@@ -28,10 +28,12 @@ class MultiChoice:
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True)
-    parser.add_argument("--model_args", default="")
-    parser.add_argument("--tasks", default=None, choices=MultiChoice(tasks.ALL_TASKS))
-    parser.add_argument("--task_name", default=None)
-    parser.add_argument("--model_name", default=None)
+    parser.add_argument("--model_args", required=True, default="")
+    parser.add_argument("--tasks", required=True, default=None, choices=MultiChoice(tasks.ALL_TASKS))
+    parser.add_argument("--task_list", required=True, default=None)
+    parser.add_argument("--model_name", required=True, default=None)
+    parser.add_argument("--data_path", required=True)
+    parser.add_argument("--prompt_wrapper", default=None)
     parser.add_argument("--provide_description", action="store_true")
     parser.add_argument("--num_fewshot", type=int, default=0)
     parser.add_argument("--batch_size", type=str, default=None)
@@ -79,9 +81,16 @@ def main():
         with open(args.description_dict_path, "r") as f:
             description_dict = json.load(f)
 
-    results = evaluator.simple_evaluate(
+    task_list = args.task_list.split(',')   # the format of args.task_list: "task_1,task_2,task3,..."
+    if args.prompt_wrapper is not None:
+        prompt_wrapper = open(args.prompt_wrapper, "r").read()
+    else:
+        prompt_wrapper = None
+    list_of_results = evaluator.simple_evaluate(
+        prompt_wrapper=prompt_wrapper,
+        data_path=args.data_path,
         model_name=args.model_name,
-        task_name=args.task_name,
+        task_list=task_list,
         model=args.model,
         model_args=args.model_args,
         tasks=task_names,
@@ -95,18 +104,19 @@ def main():
         check_integrity=args.check_integrity,
     )
 
-    dumped = json.dumps(results, indent=2)
-    print(dumped)
+    for results in list_of_results:
+        dumped = json.dumps(results, indent=2)
+        print(dumped)
 
-    if args.output_path:
-        with open(args.output_path, "w") as f:
-            f.write(dumped)
+        if args.output_path:
+            with open(args.output_path, "w") as f:
+                f.write(dumped)
 
-    print(
-        f"{args.model} ({args.model_args}), limit: {args.limit}, provide_description: {args.provide_description}, "
-        f"num_fewshot: {args.num_fewshot}, batch_size: {args.batch_size}"
-    )
-    print(evaluator.make_table(results))
+        print(
+            f"{args.model} ({args.model_args}), limit: {args.limit}, provide_description: {args.provide_description}, "
+            f"num_fewshot: {args.num_fewshot}, batch_size: {args.batch_size}"
+        )
+        print(evaluator.make_table(results))
 
 
 if __name__ == "__main__":
