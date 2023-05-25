@@ -119,15 +119,10 @@ class EmotionTask(Task):
         label_prompt += f", or {keys[-1]}"
         label_prompt = label_prompt.lower()
 
-        prompt_wrap = (
-            "Below is an instruction that describes a task. "
-            "Write a response that appropriately completes the request.\n\n"
-            "### Instruction:\n{}\n\n### Response:"
-        )
         text=doc["content"]+f"\nQuestion: Is the emotion of this sentence {label_prompt}?\nAnswer:"
 
-        if text:
-            text = prompt_wrap.format(text)
+        if self.prompt_wrapper:
+            text = self.prompt_wrapper.format(text)
             
         assert text is not None
 

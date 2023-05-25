@@ -33,6 +33,7 @@ def parse_args():
     parser.add_argument("--task_list", required=True, default=None)
     parser.add_argument("--model_name", required=True, default=None)
     parser.add_argument("--data_path", required=True)
+    parser.add_argument("--prompt_wrapper", default=None)
     parser.add_argument("--provide_description", action="store_true")
     parser.add_argument("--num_fewshot", type=int, default=0)
     parser.add_argument("--batch_size", type=str, default=None)
@@ -81,7 +82,12 @@ def main():
             description_dict = json.load(f)
 
     task_list = args.task_list.split(',')   # the format of args.task_list: "task_1,task_2,task3,..."
+    if args.prompt_wrapper is not None:
+        prompt_wrapper = open(args.prompt_wrapper, "r").read()
+    else:
+        prompt_wrapper = None
     list_of_results = evaluator.simple_evaluate(
+        prompt_wrapper=prompt_wrapper,
         data_path=args.data_path,
         model_name=args.model_name,
         task_list=task_list,

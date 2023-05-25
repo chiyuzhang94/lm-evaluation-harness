@@ -74,7 +74,7 @@ task_dict = {
         "humor-2020-aggarwal-hin",
         "humor-2019-blinov-rus",
         "humor-2021-chiruzzo-spa",
-        "humor-2021-meaney-eng"
+        "humor-2021-meaney-eng",
     ],
     "emotion": [
         "emotion-1994-scherer-eng",
@@ -182,8 +182,8 @@ task_dict = {
         "sentiment-2022-winata-min",
         "sentiment-2022-winata-nij",
         "sentiment-2022-winata-sun",
-        "sentiment-2022-marreddy-tel"
-    ]
+        "sentiment-2022-marreddy-tel",
+    ],
 }
 
 
@@ -193,18 +193,23 @@ def parse_args():
     parser.add_argument("--model_args", required=True)
     parser.add_argument("--model_name", required=True)
     parser.add_argument("--data_path", required=True)
+    parser.add_argument("--prompt_wrapper", required=True, default=None)
+    parser.add_argument("--output_file", default="run.sh")
     parser.add_argument("--no_cache", action="store_true")
     
     return parser.parse_args()
 
 
 def main(args):
-    with open("run/run.sh", "w") as f:
+    with open(args.output_file, "w") as f:
         for key, value in task_dict.items():
-            cmd = f"python ../main.py --model {args.model} --model_args pretrained={args.model_args} --device=cuda:0 --tasks {key} --model_name {args.model_name} --data_path {args.data_path}"
+            cmd = f"python main.py --model {args.model} --model_args pretrained={args.model_args} --device=cuda:0 --tasks {key} --model_name {args.model_name} --data_path {args.data_path}"
             
             task_list = ','.join(value)
             cmd += f" --task_list {task_list}"
+            
+            if args.prompt_wrapper:
+                cmd += f" --prompt_wrapper {args.prompt_wrapper}"
             
             if args.no_cache:
                 cmd += f" --no_cache"

@@ -15,6 +15,7 @@ def simple_evaluate(
     task_list,
     model_name,
     data_path,
+    prompt_wrapper,
     model_args=None,
     tasks=[],
     num_fewshot=0,
@@ -88,6 +89,7 @@ def simple_evaluate(
 
     list_of_results = evaluate(
         lm=lm,
+        prompt_wrapper=prompt_wrapper,
         task_dict=task_dict,
         task_list=task_list,
         model_name=model_name,
@@ -128,6 +130,7 @@ def evaluate(
     task_list,
     model_name,
     data_path,
+    prompt_wrapper,
     provide_description=None,
     num_fewshot=0,
     limit=None,
@@ -175,6 +178,7 @@ def evaluate(
     for task_name in task_list:
         task_dict_items[0][1].set_dataset_info(data_path, task_name)
         task_dict_items[0][1].set_model_name(model_name)
+        task_dict_items[0][1].set_prompt_wrapper(prompt_wrapper)
         task_dict_items[0][1].download()
 
         print("***********, ", task_dict_items[0][1].DATASET_NAME)

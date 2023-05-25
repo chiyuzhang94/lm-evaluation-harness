@@ -123,18 +123,12 @@ class IronySarcasm(Task):
         label_prompt = label_prompt.replace('_', ' ')
 
         if self.DATASET_NAME in ["irony-type-2018-hee-eng"]:
-            text = doc["content"]+f"\nQuestion: Is the type of this text {label_prompt}?"
+            text = doc["content"]+f"\nQuestion: Is the type of this text {label_prompt}?\nAnswer:"
         else:
-            text = doc["content"]+f"\nQuestion: Is this sentence {label_prompt}?"
+            text = doc["content"]+f"\nQuestion: Is this sentence {label_prompt}?\nAnswer:"
             
-        prompt_wrap = (
-            "Below is an instruction that describes a task. "
-            "Write a response that appropriately completes the request.\n\n"
-            "### Instruction:\n{}\n\n### Response:"
-        )
-        
-        if text:
-            text = prompt_wrap.format(text)
+        if self.prompt_wrapper:
+            text = self.prompt_wrapper.format(text)
             
         assert text is not None
 

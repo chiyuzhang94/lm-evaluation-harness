@@ -125,24 +125,18 @@ class SentimentTask(Task):
         label_prompt = ", ".join(keys[:-1])
         label_prompt += f", or {keys[-1]}"
         label_prompt = label_prompt.lower()
-        full_text = doc["content"]+f"\nQuestion: Is the sentiment of this sentence {label_prompt}?\nAnswer:"
+        text = doc["content"]+f"\nQuestion: Is the sentiment of this sentence {label_prompt}?\nAnswer:"
         if "Star1" in keys:
-            full_text = doc["content"]+f"\nQuestion: Is this text rated as {label_prompt}? Higher is better.\nAnswer:"
+            text = doc["content"]+f"\nQuestion: Is this text rated as {label_prompt}? Higher is better.\nAnswer:"
 
-        prompt_wrap = (
-            "Below is an instruction that describes a task. "
-            "Write a response that appropriately completes the request.\n\n"
-            "### Instruction:\n{}\n\n### Response:"
-        )
-        
-        if full_text:
-            full_text = prompt_wrap.format(full_text)
+        if self.prompt_wrapper:
+            text = self.prompt_wrapper.format(text)
             
-        assert full_text is not None
+        assert text is not None
 
 
 
-        return full_text
+        return text
     
     
     
