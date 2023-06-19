@@ -82,7 +82,7 @@ task_dict = {
         'emotion-2018-kajava-fin',
         'emotion-2018-kajava-fre',
         'emotion-2018-kajava-ita',
-        'emotion-2018-husein-msa',
+        # 'emotion-2018-husein-msa',
         'emotion-2020-abdul-ara',
         'emotion-2018-mohammad-eng',
         'emotion-2018-mohammad-ara',
@@ -203,7 +203,7 @@ def parse_args():
 def main(args):
     with open(args.output_file, "w") as f:
         for key, value in task_dict.items():
-            cmd = f"python main.py --model {args.model} --model_args pretrained={args.model_args} --device=cuda:0 --tasks {key} --model_name {args.model_name} --data_path {args.data_path}"
+            cmd = f"python ../main.py --model {args.model} --model_args pretrained={args.model_args} --device=cuda:0 --tasks {key} --model_name {args.model_name} --data_path {args.data_path}"
             
             task_list = ','.join(value)
             cmd += f" --task_list {task_list}"
