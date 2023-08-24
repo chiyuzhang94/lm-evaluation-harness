@@ -30,7 +30,7 @@ from . import pubmedqa
 from . import sciq
 from . import qasper
 from . import qa4mre
-from . import translation
+# from . import translation
 from . import headqa
 from . import mathqa
 from . import hendrycks_ethics
@@ -53,36 +53,36 @@ from . import storycloze
 from . import toxigen
 from . import crowspairs
 from . import xcopa
-# from . import bigbench
+from . import bigbench
 from . import xstorycloze
 from . import xwinograd
 from . import pawsx
 from . import xnli
 from . import mgsm
-from . import emotion_task, irony_sarcasm, subjective_task, humor_task, other_task
+from . import emotion_task, irony_sarcasm, subjective_task, humor_task, other_task,sentiment_task
 ########################################
 # Translation tasks
 ########################################
 
-# 6 total
-gpt3_translation_benchmarks = {
-    "wmt14": ["en-fr", "fr-en"],  # French
-    "wmt16": ["en-ro", "ro-en", "de-en", "en-de"],  # German, Romanian
-}
+# # 6 total
+# gpt3_translation_benchmarks = {
+#     "wmt14": ["en-fr", "fr-en"],  # French
+#     "wmt16": ["en-ro", "ro-en", "de-en", "en-de"],  # German, Romanian
+# }
 
 
-# 28 total
-selected_translation_benchmarks = {
-    **gpt3_translation_benchmarks,
-    "wmt20": sacrebleu.get_langpairs_for_testset("wmt20"),
-    "iwslt17": ["en-ar", "ar-en"],  # Arabic
-}
+# # 28 total
+# selected_translation_benchmarks = {
+#     **gpt3_translation_benchmarks,
+#     "wmt20": sacrebleu.get_langpairs_for_testset("wmt20"),
+#     "iwslt17": ["en-ar", "ar-en"],  # Arabic
+# }
 
-# 319 total
-all_translation_benchmarks = {
-    ts: sacrebleu.get_langpairs_for_testset(ts)
-    for ts in sacrebleu.get_available_testsets()
-}
+# # 319 total
+# all_translation_benchmarks = {
+#     ts: sacrebleu.get_langpairs_for_testset(ts)
+#     for ts in sacrebleu.get_available_testsets()
+# }
 
 
 ########################################
@@ -190,9 +190,9 @@ TASK_REGISTRY = {
     # hendrycksTest (57 tasks)
     **hendrycks_test.create_all_tasks(),
     # e.g. wmt14-fr-en
-    **translation.create_tasks_from_benchmarks(gpt3_translation_benchmarks),
-    # chef's selection, mostly wmt20
-    **translation.create_tasks_from_benchmarks(selected_translation_benchmarks),
+    # **translation.create_tasks_from_benchmarks(gpt3_translation_benchmarks),
+    # # chef's selection, mostly wmt20
+    # **translation.create_tasks_from_benchmarks(selected_translation_benchmarks),
     # Word Scrambling and Manipulation Tasks
     "anagrams1": unscramble.Anagrams1,
     "anagrams2": unscramble.Anagrams2,
@@ -318,12 +318,13 @@ TASK_REGISTRY = {
     "subjective_task": subjective_task.Subjective,
     "humor_task": humor_task.Humor,
     "other_task": other_task.Other,
+    "sentiment_task":sentiment_task.SentimentTask,
     # Requires manual download of data.
     # "storycloze_2016": storycloze.StoryCloze2016,
     # "storycloze_2018": storycloze.StoryCloze2018,
     # "sat": sat.SATAnalogies,
     **xcopa.construct_tasks(),
-#     **bigbench.create_all_tasks(),
+    **bigbench.create_all_tasks(),
     **xstorycloze.create_all_tasks(),
     **xwinograd.create_all_tasks(),
     **pawsx.construct_tasks(),

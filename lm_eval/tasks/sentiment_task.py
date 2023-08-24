@@ -25,7 +25,7 @@ class SentimentTask(Task):
     VERSION = 0
     # TODO: Add the `DATASET_PATH` string. This will be the name of the `Task`
     # dataset as denoted in HuggingFace `datasets`.
-    DATASET_PATH = "/home/qisheng.liao/multilingual_sm/sparrow_dataset"
+    DATASET_PATH = "/home/aguailhj/scratch/multilingual_sm/sparrow_dataset"
     # TODO: Add the `DATASET_NAME` string. This is the name of a subset within
     # `DATASET_PATH`. If there aren't specific subsets you need, leave this as `None`.
     DATASET_NAME = None
@@ -40,8 +40,9 @@ class SentimentTask(Task):
         # self.DATASET_NAME = task_name
         # self.dataset = self.download()
 
-    def set_dataset_name(self, task_name):
+    def set_dataset_info(self, data_path, task_name):
         self.DATASET_NAME = task_name
+        self.DATASET_PATH = data_path
         with open(f"{self.DATASET_PATH}/data/{task_name}/label2ind.json") as json_file:
             self.label2ind = json.load(json_file)
 
@@ -124,12 +125,18 @@ class SentimentTask(Task):
         label_prompt = ", ".join(keys[:-1])
         label_prompt += f", or {keys[-1]}"
         label_prompt = label_prompt.lower()
-        full_text = doc["content"]+f"\nQuestion: Is the sentiment of this sentence {label_prompt}?\nAnswer:"
+        text = doc["content"]+f"\nQuestion: Is the sentiment of this sentence {label_prompt}?\nAnswer:"
         if "Star1" in keys:
-            full_text = doc["content"]+f"\nQuestion: Is this text rated as {label_prompt}? Higher is better.\nAnswer:"
-            
+            text = doc["content"]+f"\nQuestion: Is this text rated as {label_prompt}? Higher is better.\nAnswer:"
 
-        return full_text
+        if self.prompt_wrapper:
+            text = self.prompt_wrapper.format(text)
+            
+        assert text is not None
+
+
+
+        return text
     
     
     

@@ -25,7 +25,7 @@ class IronySarcasm(Task):
     VERSION = 0
     # TODO: Add the `DATASET_PATH` string. This will be the name of the `Task`
     # dataset as denoted in HuggingFace `datasets`.
-    DATASET_PATH = "/home/duy.doan/Documents/chiyu/multilingual_sm/sparrow_dataset"
+    DATASET_PATH = None
     # TODO: Add the `DATASET_NAME` string. This is the name of a subset within
     # `DATASET_PATH`. If there aren't specific subsets you need, leave this as `None`.
     DATASET_NAME = None
@@ -39,11 +39,11 @@ class IronySarcasm(Task):
         # self.DATASET_NAME = task_name
         # self.dataset = self.download()
 
-    def set_dataset_name(self, task_name):
+    def set_dataset_info(self, data_path, task_name):
         self.DATASET_NAME = task_name
+        self.DATASET_PATH = data_path
         with open(f"{self.DATASET_PATH}/data/{task_name}/label2ind.json") as json_file:
             self.label2ind = json.load(json_file)
-
 
     def set_model_name(self, model_name):
         self.model_name = model_name
@@ -122,7 +122,17 @@ class IronySarcasm(Task):
         label_prompt = label_prompt.lower()
         label_prompt = label_prompt.replace('_', ' ')
 
-        return doc["content"]+f"\nQuestion: Is this sentence {label_prompt}?\nAnswer:"
+        if self.DATASET_NAME in ["irony-type-2018-hee-eng"]:
+            text = doc["content"]+f"\nQuestion: Is the type of this text {label_prompt}?\nAnswer:"
+        else:
+            text = doc["content"]+f"\nQuestion: Is this sentence {label_prompt}?\nAnswer:"
+            
+        if self.prompt_wrapper:
+            text = self.prompt_wrapper.format(text)
+            
+        assert text is not None
+
+        return text
     
     
     

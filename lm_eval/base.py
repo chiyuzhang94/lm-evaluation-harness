@@ -468,6 +468,9 @@ class Task(abc.ABC):
         self.download(data_dir, cache_dir, download_mode)
         self._training_docs = None
         self._fewshot_docs = None
+        
+    def set_prompt_wrapper(self, prompt_wrapper):
+        self.prompt_wrapper = prompt_wrapper
 
     def download(self, data_dir=None, cache_dir=None, download_mode=None):
         """Downloads and returns the task dataset.
