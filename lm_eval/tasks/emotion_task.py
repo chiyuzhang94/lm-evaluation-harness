@@ -119,7 +119,8 @@ class EmotionTask(Task):
         label_prompt += f", or {keys[-1]}"
         label_prompt = label_prompt.lower()
 
-        text=doc["content"]+f"\nQuestion: Is the emotion of this sentence {label_prompt}?\nAnswer:"
+        # text=doc["content"]+f"\nQuestion: Is the emotion of this sentence {label_prompt}?\nAnswer:"
+        text = doc["content"] + f"\nQuestion: What is the emotion of this sentence?\nAnswer:"
 
         if self.prompt_wrapper:
             text = self.prompt_wrapper.format(text)
@@ -213,7 +214,7 @@ class EmotionTask(Task):
             'report':report
         }
         
-        model_dir = f"{os.getcwd()}/results/{self.model_name}"
+        model_dir = f"{os.getcwd()}/results_rebuttal/{self.model_name}"
         if not os.path.exists(model_dir):
             os.mkdir(model_dir)
 
