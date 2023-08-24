@@ -15,6 +15,7 @@ import lm_eval.metrics as me
 import numpy as np
 import json
 import os
+import pandas as pd
 # TODO: Add the BibTeX citation for the task.
 _CITATION = """
 """
@@ -43,7 +44,29 @@ class IronySarcasm(Task):
         self.DATASET_NAME = task_name
         self.DATASET_PATH = data_path
         with open(f"{self.DATASET_PATH}/data/{task_name}/label2ind.json") as json_file:
-            self.label2ind = json.load(json_file)
+            label2ind_en = json.load(json_file)
+            
+        # Load prompt
+        prompt_path = "/".join(self.DATASET_PATH.split("/")[:-1]) + "/prompt_lm_harness_translated.csv"
+        prompt_data = pd.read_csv(prompt_path)
+        prompt_dict = {}
+        for i, row in prompt_data.iterrows():
+            prompt_dict[row["task_name"]] = {
+                "en_prompt": row["en_prompt"],
+                "en_labelmap": row["en_labelmap"],
+                "translated_prompt": row["translated_prompts"],
+                "translated_labelmap": row["translated_labelmaps"]
+            }
+        self.prompt_dict = prompt_dict
+        
+        translated_labelmap = json.loads(prompt_dict[task_name]["translated_labelmap"].replace("'", "\""))
+        
+        self.label2ind = {}
+        self.en_translated = {}
+        for key, value in translated_labelmap.items():
+            self.label2ind[key] = label2ind_en[value]
+            self.en_translated[value] = key
+        self.translated_labelmap = translated_labelmap
 
     def set_model_name(self, model_name):
         self.model_name = model_name
@@ -108,24 +131,25 @@ class IronySarcasm(Task):
     def doc_to_text(self, doc):
         # TODO: Format the query prompt portion of the document example.
 
-        label_prompt=""
-        keys=list(self.label2ind.keys())
-        if "Others" in keys:
-            keys.remove("Others")
-            keys.append("Others")
-        if "Not" in keys:
-            keys.remove("Not")
-            keys.append("Not")
+        # label_prompt=""
+        # keys=list(self.label2ind.keys())
+        # if "Others" in keys:
+        #     keys.remove("Others")
+        #     keys.append("Others")
+        # if "Not" in keys:
+        #     keys.remove("Not")
+        #     keys.append("Not")
             
-        label_prompt = ", ".join(keys[:-1])
-        label_prompt += f", or {keys[-1]}"
-        label_prompt = label_prompt.lower()
-        label_prompt = label_prompt.replace('_', ' ')
+        # label_prompt = ", ".join(keys[:-1])
+        # label_prompt += f", or {keys[-1]}"
+        # label_prompt = label_prompt.lower()
+        # label_prompt = label_prompt.replace('_', ' ')
 
-        if self.DATASET_NAME in ["irony-type-2018-hee-eng"]:
-            text = doc["content"]+f"\nQuestion: Is the type of this text {label_prompt}?\nAnswer:"
-        else:
-            text = doc["content"]+f"\nQuestion: Is this sentence {label_prompt}?\nAnswer:"
+        # if self.DATASET_NAME in ["irony-type-2018-hee-eng"]:
+        #     text = doc["content"]+f"\nQuestion: Is the type of this text {label_prompt}?\nAnswer:"
+        # else:
+        #     text = doc["content"]+f"\nQuestion: Is this sentence {label_prompt}?\nAnswer:"
+        text = self.prompt_dict[self.DATASET_NAME]["translated_prompt"].format(doc["content"])
             
         if self.prompt_wrapper:
             text = self.prompt_wrapper.format(text)
@@ -143,7 +167,8 @@ class IronySarcasm(Task):
         # TODO: Fill in the `target` ("gold answer") variable.
         # The prepended `" "` is required to space out the `doc_to_text` and
         # `doc_to_target` strings.
-        target = doc["label"].replace('_', ' ')
+        # target = doc["label"].replace('_', ' ')
+        target = self.en_translated[doc["label"]]
         return " " + target
 
     def construct_requests(self, doc, ctx):
@@ -183,7 +208,7 @@ class IronySarcasm(Task):
         gold = doc["label"]
         pred = np.argmax(results)
         
-        pred=ind2label[pred]
+        pred = self.translated_labelmap[ind2label[pred]]
         #scores = self.compute_scores(gold, pred)
         self.gold_list.append(gold)
         self.pred_list.append(pred)

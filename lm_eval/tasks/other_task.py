@@ -15,6 +15,7 @@ import lm_eval.metrics as me
 import numpy as np
 import json
 import os
+import pandas as pd
 # TODO: Add the BibTeX citation for the task.
 _CITATION = """
 """
@@ -43,8 +44,29 @@ class Other(Task):
         self.DATASET_NAME = task_name
         self.DATASET_PATH = data_path
         with open(f"{self.DATASET_PATH}/data/{task_name}/label2ind.json") as json_file:
-            self.label2ind = json.load(json_file)
-
+            label2ind_en = json.load(json_file)
+            
+        # Load prompt
+        prompt_path = "/".join(self.DATASET_PATH.split("/")[:-1]) + "/prompt_lm_harness_translated.csv"
+        prompt_data = pd.read_csv(prompt_path)
+        prompt_dict = {}
+        for i, row in prompt_data.iterrows():
+            prompt_dict[row["task_name"]] = {
+                "en_prompt": row["en_prompt"],
+                "en_labelmap": row["en_labelmap"],
+                "translated_prompt": row["translated_prompts"],
+                "translated_labelmap": row["translated_labelmaps"]
+            }
+        self.prompt_dict = prompt_dict
+        
+        translated_labelmap = json.loads(prompt_dict[task_name]["translated_labelmap"].replace("'", "\""))
+        
+        self.label2ind = {}
+        self.en_translated = {}
+        for key, value in translated_labelmap.items():
+            self.label2ind[key] = label2ind_en[value]
+            self.en_translated[value] = key
+        self.translated_labelmap = translated_labelmap
 
     def set_model_name(self, model_name):
         self.model_name = model_name
@@ -109,39 +131,40 @@ class Other(Task):
     def doc_to_text(self, doc):
         # TODO: Format the query prompt portion of the document example.
 
-        label_prompt=""
-        keys=list(self.label2ind.keys())
-        if "Others" in keys:
-            keys.remove("Others")
-            keys.append("Others")
-        if "Not" in keys:
-            keys.remove("Not")
-            keys.append("Not")
+        # label_prompt=""
+        # keys=list(self.label2ind.keys())
+        # if "Others" in keys:
+        #     keys.remove("Others")
+        #     keys.append("Others")
+        # if "Not" in keys:
+        #     keys.remove("Not")
+        #     keys.append("Not")
             
-        label_prompt = ", ".join(keys[:-1])
-        label_prompt += f", or {keys[-1]}"
-        label_prompt = label_prompt.lower()
-        label_prompt = label_prompt.replace('_', ' ')
-        label_prompt = label_prompt.replace('dangerous', 'harmful')
-        label_prompt = label_prompt.replace('hate', 'hateful')
+        # label_prompt = ", ".join(keys[:-1])
+        # label_prompt += f", or {keys[-1]}"
+        # label_prompt = label_prompt.lower()
+        # label_prompt = label_prompt.replace('_', ' ')
+        # label_prompt = label_prompt.replace('dangerous', 'harmful')
+        # label_prompt = label_prompt.replace('hate', 'hateful')
         
-        text = None
-        if self.DATASET_NAME in ["offense-target-2022-chakravarthi-mal", "offense-target-2022-chakravarthi-tam"]:
-            text = doc["content"]+"\nQuestion: Is this sentence hate speech or not? If yes, does this sentence target individual, group, or not?\nAnswer:"
-        elif self.DATASET_NAME in ["offensive-group-2019-zampieri-eng", "offense-target-2022-chakravarthi-kan", "hate-target-2022-jeong-kor"]:
-            text = doc["content"]+f"\nQuestion: Does this offensive text target {label_prompt}?\nAnswer:"
-        elif self.DATASET_NAME in ["hate-group-2019-ousidhoum-ara", "hate-group-2019-ousidhoum-fre"]:
-            text = doc["content"]+f"\nQuestions: Does this hate speech target {label_prompt}?\nAnswer:"
-        elif self.DATASET_NAME in ["dangerous-2020-alshehri-ara"]:
-            text = doc["content"]+"\nQuestion: Is the language of this sentence harmful or not?\nAnswer:"
-        elif self.DATASET_NAME in ["hate-target-2019-ousidhoum-ara", "hate-target-2019-ousidhoum-fre"]:
-            text = doc["content"]+f"\nQuestion: Does this hate speech text insult against people based on their attribute of {label_prompt}?\nAnswer:"
-        elif self.DATASET_NAME in ["hate-target-2020-karim-ben"]:
-            text = doc["content"]+"\nQuestion: Does this text express geopolitical, personal, political, or religious hate?\nAnswer:"
-        elif self.DATASET_NAME in ["offensive-target-2019-zampieri-eng"]:
-            text = doc["content"]+f"\nQuestion: Is this offensive text {label_prompt} insult?\nAnswer:"
-        else:
-            text = doc["content"]+f"\nQuestion: Is the language of this text {label_prompt}?\nAnswer:"
+        # text = None
+        # if self.DATASET_NAME in ["offense-target-2022-chakravarthi-mal", "offense-target-2022-chakravarthi-tam"]:
+        #     text = doc["content"]+"\nQuestion: Is this sentence hate speech or not? If yes, does this sentence target individual, group, or not?\nAnswer:"
+        # elif self.DATASET_NAME in ["offensive-group-2019-zampieri-eng", "offense-target-2022-chakravarthi-kan", "hate-target-2022-jeong-kor"]:
+        #     text = doc["content"]+f"\nQuestion: Does this offensive text target {label_prompt}?\nAnswer:"
+        # elif self.DATASET_NAME in ["hate-group-2019-ousidhoum-ara", "hate-group-2019-ousidhoum-fre"]:
+        #     text = doc["content"]+f"\nQuestions: Does this hate speech target {label_prompt}?\nAnswer:"
+        # elif self.DATASET_NAME in ["dangerous-2020-alshehri-ara"]:
+        #     text = doc["content"]+"\nQuestion: Is the language of this sentence harmful or not?\nAnswer:"
+        # elif self.DATASET_NAME in ["hate-target-2019-ousidhoum-ara", "hate-target-2019-ousidhoum-fre"]:
+        #     text = doc["content"]+f"\nQuestion: Does this hate speech text insult against people based on their attribute of {label_prompt}?\nAnswer:"
+        # elif self.DATASET_NAME in ["hate-target-2020-karim-ben"]:
+        #     text = doc["content"]+"\nQuestion: Does this text express geopolitical, personal, political, or religious hate?\nAnswer:"
+        # elif self.DATASET_NAME in ["offensive-target-2019-zampieri-eng"]:
+        #     text = doc["content"]+f"\nQuestion: Is this offensive text {label_prompt} insult?\nAnswer:"
+        # else:
+        #     text = doc["content"]+f"\nQuestion: Is the language of this text {label_prompt}?\nAnswer:"
+        text = self.prompt_dict[self.DATASET_NAME]["translated_prompt"].format(doc["content"])
             
         if self.prompt_wrapper:
             text = self.prompt_wrapper.format(text)
@@ -159,16 +182,17 @@ class Other(Task):
         # TODO: Fill in the `target` ("gold answer") variable.
         # The prepended `" "` is required to space out the `doc_to_text` and
         # `doc_to_target` strings.
-        if self.DATASET_NAME in ["offense-target-2022-chakravarthi-mal", "offense-target-2022-chakravarthi-tam"]:
-            target = doc["label"].replace("Not", "No, it is not hate speech.")
-            target = doc["label"].replace("Untargeted", "Yes, it is untargeted.")
-            target = doc["label"].replace("Group", "Yes, it targets group.")
-            target = doc["label"].replace("Individual", "Yes, it targets individual.")
-            target = doc["label"].replace("Others", "Yes, it is targeted but targets to neither individual nor group of people.")
-        elif self.DATASET_NAME == "dangerous-2020-alshehri-ara":
-            target = doc["label"].replace("Dangerous", "Harmful")
-        target = doc["label"].replace('_', ' ')
-        target = doc["label"].replace('Hate', 'Hateful')
+        # if self.DATASET_NAME in ["offense-target-2022-chakravarthi-mal", "offense-target-2022-chakravarthi-tam"]:
+        #     target = doc["label"].replace("Not", "No, it is not hate speech.")
+        #     target = doc["label"].replace("Untargeted", "Yes, it is untargeted.")
+        #     target = doc["label"].replace("Group", "Yes, it targets group.")
+        #     target = doc["label"].replace("Individual", "Yes, it targets individual.")
+        #     target = doc["label"].replace("Others", "Yes, it is targeted but targets to neither individual nor group of people.")
+        # elif self.DATASET_NAME == "dangerous-2020-alshehri-ara":
+        #     target = doc["label"].replace("Dangerous", "Harmful")
+        # target = doc["label"].replace('_', ' ')
+        # target = doc["label"].replace('Hate', 'Hateful')
+        target = self.en_translated[doc["label"]]
         return " " + target
 
     def construct_requests(self, doc, ctx):
@@ -208,7 +232,7 @@ class Other(Task):
         gold = doc["label"]
         pred = np.argmax(results)
         
-        pred=ind2label[pred]
+        pred = self.translated_labelmap[ind2label[pred]]
         #scores = self.compute_scores(gold, pred)
         self.gold_list.append(gold)
         self.pred_list.append(pred)
